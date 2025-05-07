@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState, ChangeEvent, useRef, useEffect, CSSProperties } from 'react';
+import { useState, ChangeEvent, CSSProperties } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -49,14 +49,7 @@ const getLinedBackgroundStyle = (hasError: boolean): CSSProperties => {
 export default function FormClient() {
   const router = useRouter();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [studentInfoHeight, setStudentInfoHeight] = useState(0);
-  const studentInfoRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (studentInfoRef.current) {
-      setStudentInfoHeight(studentInfoRef.current.offsetHeight);
-    }
-  }, []);
 
   const {
     register,
@@ -138,7 +131,7 @@ export default function FormClient() {
       </div>
 
       <div className="flex justify-between items-start mb-4 space-x-2">
-        <div ref={studentInfoRef} className=" box-border flex-grow-[3] space-y-2 bg-transparent">
+        <div className=" box-border flex-grow-[3] space-y-2 bg-transparent">
           <div className="flex items-baseline">
             <label htmlFor="school" className={`${labelClass} text-sm mr-[6px]`}>Trường:</label>
             <input 
@@ -170,8 +163,8 @@ export default function FormClient() {
           </div>
         </div>
         <div 
-          className={`px-2 py-1 box-border flex-grow-[1] ml-4 flex flex-col items-center justify-start bg-transparent border ${errors.image ? 'border-brand-error' : 'border-brand-blue'}`} 
-          style={{height: studentInfoHeight > 0 ? `${studentInfoHeight}px` : '100px', width: studentInfoHeight > 0 ? `${studentInfoHeight}px` : '100px'}}
+          className={`px-2 py-1 box-border flex-grow-[1] ml-4 flex h-[100px] w-[100px] flex-col items-center justify-start bg-transparent border ${errors.image ? 'border-brand-error' : 'border-brand-blue'}`} 
+          // style={{height: studentInfoHeight > 0 ? `${studentInfoHeight}px` : '100px', width: studentInfoHeight > 0 ? `${studentInfoHeight}px` : '100px'}}
         >
           <p className={`${labelClass} text-sm italic underline mb-1`}>Điểm</p>
         </div>
@@ -202,8 +195,8 @@ export default function FormClient() {
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 mb-0.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                   </svg>
-                  <p className="text-[10px] leading-tight font-times font-bold">Chọn file ảnh</p>
-                  <p className="text-[9px] leading-tight font-times mt-0.5 font-bold">Tối đa: 64 MB</p>
+                  <p className="text-[14px] leading-tight font-times font-bold">Chọn file ảnh</p>
+                  <p className="text-[10px] leading-tight font-times mt-0.5 font-bold">Tối đa: 64 MB</p>
                 </>
               )}
             </label>

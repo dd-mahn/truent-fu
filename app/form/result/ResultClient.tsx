@@ -51,8 +51,6 @@ export default function ResultClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
-  const studentInfoRef = useRef<HTMLDivElement>(null); // For Điểm box height calculation
-  const [studentInfoHeight, setStudentInfoHeight] = useState(0);
 
   useEffect(() => {
     const storedData = localStorage.getItem('formData');
@@ -66,13 +64,6 @@ export default function ResultClient() {
     }
     setIsLoading(false);
   }, []);
-
-  useEffect(() => {
-    if (studentInfoRef.current) {
-      setStudentInfoHeight(studentInfoRef.current.offsetHeight);
-    }
-  }, [formData]); // Recalculate if formData (and thus studentInfo content) changes
-
   const handleDownload = async () => {
     if (resultRef.current) {
       setIsDownloading(true);
@@ -109,18 +100,19 @@ export default function ResultClient() {
   }
 
   const Sticker = ({ src, alt, className }: { src: string, alt: string, className?: string }) => (
-    <Image src={src} alt={alt} width={100} height={100} className={`absolute object-contain z-20 ${className}`} /> // Ensure stickers are above lines if needed
+    <Image src={src} alt={alt} width={120} height={120} className={`absolute object-contain z-20 ${className}`} /> // Ensure stickers are above lines if needed
   );
 
   return (
     <div className="max-w-2xl mx-auto font-times bg-crumpled-paper">
-      <div ref={resultRef} className="bg-crumpled-paper p-4 md:p-6 text-sm relative overflow-hidden font-times">
+      <div ref={resultRef} className="bg-crumpled-paper p-4 md:p-6 pb-8 text-sm relative overflow-hidden font-times">
         {/* Stickers */}
-        <Sticker src="/images/guitar.png" alt="Guitar Sticker" className="top-5 right-5 rotate-12 w-20 h-20 md:w-24 md:h-24" />
-        <Sticker src="/images/drum.png" alt="Chopsticks Sticker" className="top-[30%] left-2 -rotate-12 w-16 md:w-20" />
-        <Sticker src="/images/logo.png" alt="TruantFu Logo Sticker" className="top-1/2 left-1 md:left-2 -translate-y-1/2 w-16 md:w-20 opacity-80" />
-        <Sticker src="/images/band.png" alt="Thanks Sticker" className="bottom-[25%] right-3 md:right-5 rotate-6 w-20 md:w-28"/>
-        <Sticker src="/images/guitar-black.png" alt="Guitar Sticker 2" className="bottom-5 right-5 w-20 h-20 md:w-24 md:h-24" />
+        <Sticker src="/images/guitar.png" alt="Guitar Sticker" className="top-5 -left-2 rotate-30 w-24 h-24 md:w-24 md:h-24" />
+        <Sticker src="/images/drum.png" alt="Chopsticks Sticker" className="top-[40%] left-2 -rotate-12 w-12" />
+        <Sticker src="/images/logo.png" alt="TruantFu Logo Sticker" className="top-[45%] right-1 -translate-y-1/2 w-12 opacity-80" />
+        <Sticker src="/images/band.png" alt="Thanks Sticker" className="-bottom-4 left-3 rotate-6 w-34"/>
+          <Sticker src="/images/guitar-blue.png" alt="Guitar Sticker" className="-bottom-0 right-3 rotate-6 w-16"/>
+        <Sticker src="/images/guitar-black.png" alt="Guitar Sticker 2" className="top-4 right-0 w-20 h-20 md:w-24 md:h-24" />
 
         {/* Header - Replicating FormClient structure & style */}
         <div className="text-center mb-4 relative z-10">
@@ -137,7 +129,7 @@ export default function ResultClient() {
 
         {/* Student Info & Score - Replicating FormClient structure & style */}
         <div className="flex justify-between mt-8 items-start mb-4 space-x-2 relative z-10">
-          <div ref={studentInfoRef} className="flex-grow-[3] space-y-2 bg-transparent p-3 box-border">
+          <div className="flex-grow-[3] space-y-2 bg-transparent box-border">
             <div className="flex items-baseline">
               <span className={`${labelClass} text-sm mr-[6px]`}>Trường:</span>
               <span className={`${valueBaseStyle} border-b border-brand-blue flex-1 px-0 pt-1 pb-[1px]`}>{formData.school}</span>
@@ -152,8 +144,7 @@ export default function ResultClient() {
             </div>
           </div>
           <div 
-            className={`p-3 flex-grow-[1] ml-4 flex flex-col items-center justify-start bg-transparent border border-brand-blue box-border`}
-            style={{height: studentInfoHeight > 0 ? `${studentInfoHeight}px` : '100px', width: studentInfoHeight > 0 ? `${studentInfoHeight}px` : '100px'}}
+            className={`p-3 flex-grow-[1] ml-4 flex h-[100px] w-[100px] flex-col items-center justify-start bg-transparent border border-brand-blue box-border`}
           >
             {/* Score box - Replaced with image for result page */}
             <p className={`${labelClass} text-sm mb-1 italic underline`}>Điểm</p>
@@ -163,7 +154,7 @@ export default function ResultClient() {
 
         {/* Static Lời phê - Replicating FormClient structure & style */}
         <div className={`mb-4 px-1 py-1 bg-transparent border border-brand-blue relative z-10 box-border`}>
-            <h2 className={`${labelClass} text-center font-semibold mb-2 text-sm underline decoration-brand-blue italic`}>Lời phê của ban nhạc</h2>
+            <h2 className={`${labelClass} text-center font-semibold text-sm underline decoration-brand-blue italic`}>Lời phê của ban nhạc</h2>
             <p className="text-[8px] md:text-[10px] italic whitespace-pre-wrap leading-relaxed text-justify text-brand-error font-nvn h-20 overflow-y-auto p-1 bg-transparent">
                 {staticCriticismText}
             </p>
@@ -171,24 +162,24 @@ export default function ResultClient() {
 
         {/* Đề bài & Essay Lines - Replicating FormClient structure & style */}
         <div className="mb-4 flex flex-col items-center relative z-10">
-          <h2 className={`${labelClass} text-[24px] font-bold text-center mb-1`}>ĐỀ BÀI</h2>
-          <p className={`${labelClass} text-center text-sm my-3 px-1 md:w-3/4`}>
+          <h2 className={`${labelClass} text-[24px] font-bold text-center`}>ĐỀ BÀI</h2>
+          <p className={`${labelClass} text-center text-sm my-2 px-1 md:w-3/4`}>
             Cậu hãy chia sẻ với bọn tớ một vài kỷ niệm thời học sinh của mình, hoặc cậu cũng có thể viết đôi dòng cảm nghĩ dành cho Truant Fu và ca khúc &apos;Một Thời&apos; nhé!
           </p>
           
           <div className="flex mt-2 flex-1 w-full space-x-3">
             {/* Uploaded Image Display (if exists) */}
             {formData.image && (
-              <div className="w-[150px] flex-shrink-0 h-[120px] box-border">
-                <Image width={150} height={120} src={formData.image} alt="Kỷ niệm" className="w-full h-full object-cover border border-brand-blue" />
+              <div className="w-[170px] flex-shrink-0 h-[160px] box-border">
+                <Image width={170} height={160} src={formData.image} alt="Kỷ niệm" className="w-full h-full object-cover border border-brand-blue" />
               </div>
             )}
             {!formData.image && (
-              <div className="w-[150px] flex-shrink-0 h-[120px] box-border border border-dashed border-brand-blue/50"></div>
+              <div className="w-[170px] flex-shrink-0 h-[160px] box-border border border-dashed border-brand-blue/50"></div>
             )}
 
             {/* Essay Top Part - lined background */}
-            <div className="flex-grow h-[120px] box-border whitespace-pre-wrap overflow-hidden font-comic text-sm text-black" style={getLinedBackgroundStyle()}>
+            <div className="flex-grow h-[160px] box-border whitespace-pre-wrap overflow-hidden font-comic text-sm text-black" style={getLinedBackgroundStyle()}>
               {formData.essayContentTop || ''}
             </div>
           </div>
@@ -205,7 +196,7 @@ export default function ResultClient() {
       </div>
 
       {!isDownloading && (
-        <div className="text-center mt-10 mb-20">
+        <div className="text-center pb-2">
           <button 
             onClick={handleDownload} 
             className="px-8 py-3 bg-transparent underline text-brand-blue text-lg font-semibold hover:opacity-90 transition-opacity duration-300 flex items-center justify-center mx-auto space-x-2 font-times"
