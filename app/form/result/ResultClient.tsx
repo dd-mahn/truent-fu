@@ -1,0 +1,219 @@
+'use client';
+
+import { useEffect, useState, useRef, CSSProperties } from 'react';
+import { useRouter } from 'next/navigation';
+import { toPng } from 'html-to-image';
+import Image from 'next/image';
+
+interface StoredFormData {
+  ngayThangNam: string;
+  motThoi: string;
+  thoiHanDaXa: string;
+  school: string;
+  class: string;
+  name: string;
+  // criticism: string; // Criticism will now be static text
+  essayContentTop?: string; 
+  essayContentBottom?: string; 
+  image?: string;
+}
+
+const downloadDataUrl = (dataUrl: string, filename: string) => {
+  const link = document.createElement('a');
+  link.href = dataUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// Styles and helper copied from FormClient.tsx for consistency
+const valueBaseStyle = "text-black text-sm font-comic"; // For displaying values
+const labelClass = "text-brand-blue font-times font-bold";
+
+const getLinedBackgroundStyle = (): CSSProperties => {
+  const lineColor = '#363C83'; // Always brand-blue for result display
+  const lineHeightEm = 1.625;
+  return {
+    backgroundImage: `linear-gradient(to bottom, transparent calc(${lineHeightEm}em - 1px), ${lineColor} calc(${lineHeightEm}em - 1px), ${lineColor} ${lineHeightEm}em, transparent ${lineHeightEm}em)`,
+    backgroundSize: `100% ${lineHeightEm}em`,
+    lineHeight: `${lineHeightEm}em`,
+    boxSizing: 'border-box',
+    paddingTop: '0.1em',
+  };
+};
+
+const staticCriticismText = "Những cảm xúc của tuổi trẻ luôn đáng được trân trọng, bởi chúng chân thành và mãnh liệt theo cách rất riêng. Đó có thể là sự bồng bột trong những quyết định ngây ngô, hay những lần trăn trở vì điều nhỏ nhặt nhưng lại in đậm trong ký ức. Dù nông nổi là vậy, chính sự hồn nhiên ấy đã khiến tuổi trẻ trở nên thật sống động và khó quên. Cảm ơn cậu vì đã là một phần thanh xuân của Truant Fu!";
+
+export default function ResultClient() {
+  const router = useRouter();
+  const [formData, setFormData] = useState<StoredFormData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const resultRef = useRef<HTMLDivElement>(null);
+  const studentInfoRef = useRef<HTMLDivElement>(null); // For Điểm box height calculation
+  const [studentInfoHeight, setStudentInfoHeight] = useState(0);
+
+  useEffect(() => {
+    const storedData = localStorage.getItem('formData');
+    if (storedData) {
+      try {
+        const parsedData = JSON.parse(storedData) as StoredFormData;
+        setFormData(parsedData);
+      } catch (error) {
+        console.error('Failed to parse formData:', error);
+      }
+    }
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (studentInfoRef.current) {
+      setStudentInfoHeight(studentInfoRef.current.offsetHeight);
+    }
+  }, [formData]); // Recalculate if formData (and thus studentInfo content) changes
+
+  const handleDownload = async () => {
+    if (resultRef.current) {
+      setIsDownloading(true);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      try {
+        const dataUrl = await toPng(resultRef.current, { 
+            cacheBust: true, 
+            pixelRatio: 2,
+            // Removed style: { backgroundColor: 'white' } - background now from class
+        });
+        downloadDataUrl(dataUrl, `Một Thời Kỷ Niệm - ${formData?.name || 'result'}.png`);
+      } catch (error) {
+        console.error('Download error:', error);
+        alert('Không thể tải ảnh xuống. Vui lòng thử lại.');
+      } finally {
+        setIsDownloading(false);
+      }
+    }
+  };
+
+  if (isLoading) {
+    return <p className="text-center py-10 text-brand-blue text-sm">Đang tải kết quả...</p>;
+  }
+
+  if (!formData) {
+    return (
+      <div className="text-center py-10">
+        <p className="text-brand-error text-sm">Không tìm thấy dữ liệu.</p>
+        <button onClick={() => router.push('/form')} className="mt-4 px-4 py-2 bg-brand-blue text-white rounded text-sm hover:opacity-90">
+          Quay lại Form
+        </button>
+      </div>
+    );
+  }
+
+  const Sticker = ({ src, alt, className }: { src: string, alt: string, className?: string }) => (
+    <Image src={src} alt={alt} width={100} height={100} className={`absolute object-contain z-20 ${className}`} /> // Ensure stickers are above lines if needed
+  );
+
+  return (
+    <div className="max-w-2xl mx-auto font-times bg-crumpled-paper">
+      <div ref={resultRef} className="bg-crumpled-paper p-4 md:p-6 text-sm relative overflow-hidden font-times">
+        {/* Stickers */}
+        <Sticker src="/images/guitar.png" alt="Guitar Sticker" className="top-5 right-5 rotate-12 w-20 h-20 md:w-24 md:h-24" />
+        <Sticker src="/images/drum.png" alt="Chopsticks Sticker" className="top-[30%] left-2 -rotate-12 w-16 md:w-20" />
+        <Sticker src="/images/logo.png" alt="TruantFu Logo Sticker" className="top-1/2 left-1 md:left-2 -translate-y-1/2 w-16 md:w-20 opacity-80" />
+        <Sticker src="/images/band.png" alt="Thanks Sticker" className="bottom-[25%] right-3 md:right-5 rotate-6 w-20 md:w-28"/>
+        <Sticker src="/images/guitar-black.png" alt="Guitar Sticker 2" className="bottom-5 right-5 w-20 h-20 md:w-24 md:h-24" />
+
+        {/* Header - Replicating FormClient structure & style */}
+        <div className="text-center mb-4 relative z-10">
+          <p className={`${labelClass} text-sm`}>Ngày {new Date().toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' }).replace(' tháng', ' Tháng').replace(',',' Năm')}</p>
+          <div className="flex items-baseline justify-center space-x-2">
+            <span className={`${labelClass} text-[18px] uppercase`}>Một Thời</span>
+            <span className={`${valueBaseStyle} border-b border-brand-blue px-0 pt-1 pb-[1px]`} style={{width: '125px', display: 'inline-block'}}>{formData.motThoi}</span>
+          </div>
+          <div className="flex items-baseline justify-center space-x-2">
+            <span className={`${labelClass} text-sm`}>Thời hạn đã xa</span>
+            <span className={`${valueBaseStyle} border-b border-brand-blue px-0 pt-1 pb-[1px]`} style={{width: '80px', display: 'inline-block'}}>{formData.thoiHanDaXa}</span>
+          </div>
+        </div>
+
+        {/* Student Info & Score - Replicating FormClient structure & style */}
+        <div className="flex justify-between mt-8 items-start mb-4 space-x-2 relative z-10">
+          <div ref={studentInfoRef} className="flex-grow-[3] space-y-2 bg-transparent p-3 box-border">
+            <div className="flex items-baseline">
+              <span className={`${labelClass} text-sm mr-[6px]`}>Trường:</span>
+              <span className={`${valueBaseStyle} border-b border-brand-blue flex-1 px-0 pt-1 pb-[1px]`}>{formData.school}</span>
+            </div>
+            <div className="flex items-baseline">
+              <span className={`${labelClass} text-sm mr-[6px]`}>Lớp:</span>
+              <span className={`${valueBaseStyle} border-b border-brand-blue flex-1 px-0 pt-1 pb-[1px]`}>{formData.class}</span>
+            </div>
+            <div className="flex items-baseline">
+              <span className={`${labelClass} text-sm mr-[6px]`}>Họ và tên:</span>
+              <span className={`${valueBaseStyle} border-b border-brand-blue flex-1 px-0 pt-1 pb-[1px]`}>{formData.name}</span>
+            </div>
+          </div>
+          <div 
+            className={`p-3 flex-grow-[1] ml-4 flex flex-col items-center justify-start bg-transparent border border-brand-blue box-border`}
+            style={{height: studentInfoHeight > 0 ? `${studentInfoHeight}px` : '100px', width: studentInfoHeight > 0 ? `${studentInfoHeight}px` : '100px'}}
+          >
+            {/* Score box - Replaced with image for result page */}
+            <p className={`${labelClass} text-sm mb-1 italic underline`}>Điểm</p>
+            <Image width={80} height={80} src="/images/ten.png" alt="Điểm 10" className=" object-contain"/>
+          </div>
+        </div>
+
+        {/* Static Lời phê - Replicating FormClient structure & style */}
+        <div className={`mb-4 px-1 py-1 bg-transparent border border-brand-blue relative z-10 box-border`}>
+            <h2 className={`${labelClass} text-center font-semibold mb-2 text-sm underline decoration-brand-blue italic`}>Lời phê của ban nhạc</h2>
+            <p className="text-[8px] md:text-[10px] italic whitespace-pre-wrap leading-relaxed text-justify text-brand-error font-nvn h-20 overflow-y-auto p-1 bg-transparent">
+                {staticCriticismText}
+            </p>
+        </div>
+
+        {/* Đề bài & Essay Lines - Replicating FormClient structure & style */}
+        <div className="mb-4 flex flex-col items-center relative z-10">
+          <h2 className={`${labelClass} text-[24px] font-bold text-center mb-1`}>ĐỀ BÀI</h2>
+          <p className={`${labelClass} text-center text-sm my-3 px-1 md:w-3/4`}>
+            Cậu hãy chia sẻ với bọn tớ một vài kỷ niệm thời học sinh của mình, hoặc cậu cũng có thể viết đôi dòng cảm nghĩ dành cho Truant Fu và ca khúc &apos;Một Thời&apos; nhé!
+          </p>
+          
+          <div className="flex mt-2 flex-1 w-full space-x-3">
+            {/* Uploaded Image Display (if exists) */}
+            {formData.image && (
+              <div className="w-[150px] flex-shrink-0 h-[120px] box-border">
+                <Image width={150} height={120} src={formData.image} alt="Kỷ niệm" className="w-full h-full object-cover border border-brand-blue" />
+              </div>
+            )}
+            {!formData.image && (
+              <div className="w-[150px] flex-shrink-0 h-[120px] box-border border border-dashed border-brand-blue/50"></div>
+            )}
+
+            {/* Essay Top Part - lined background */}
+            <div className="flex-grow h-[120px] box-border whitespace-pre-wrap overflow-hidden font-comic text-sm text-black" style={getLinedBackgroundStyle()}>
+              {formData.essayContentTop || ''}
+            </div>
+          </div>
+          {/* Essay Bottom Part - lined background */}
+          <div className="flex-1 w-full mt-0 whitespace-pre-wrap overflow-hidden font-comic text-sm text-black" style={getLinedBackgroundStyle()}>
+            {formData.essayContentBottom || ''}
+            {/* Fill remaining lines if content is short, to show full lined paper effect */}
+            {Array.from({ length: Math.max(0, 6 - ((formData.essayContentBottom || '').split('\n').length)) }).map((_, i) => (
+                <div key={`fill-line-${i}`} style={{height: '1.625em'}}></div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+
+      {!isDownloading && (
+        <div className="text-center mt-10 mb-20">
+          <button 
+            onClick={handleDownload} 
+            className="px-8 py-3 bg-transparent underline text-brand-blue text-lg font-semibold hover:opacity-90 transition-opacity duration-300 flex items-center justify-center mx-auto space-x-2 font-times"
+          >
+            <span>Lưu lại kết quả</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+} 
