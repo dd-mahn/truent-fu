@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState, ChangeEvent, CSSProperties } from 'react';
+import { useState, ChangeEvent, CSSProperties, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { toast } from 'sonner';
@@ -61,7 +61,7 @@ export default function FormClient() {
     defaultValues: formData 
       ? { 
           ...formData, 
-          image: undefined 
+          image: undefined
         } 
       : {
           motThoi: '',
@@ -75,6 +75,14 @@ export default function FormClient() {
         }
   });
 
+  useEffect(() => {
+    const storedImage = localStorage.getItem('userImageData');
+    if (storedImage) {
+      setImagePreview(storedImage);
+      setValue('image', storedImage, { shouldValidate: true });
+    }
+  }, [setValue]);
+
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -83,6 +91,7 @@ export default function FormClient() {
         e.target.value = '';
         setValue('image', undefined);
         setImagePreview(null);
+        localStorage.removeItem('userImageData'); // Clear from localStorage
         return;
       }
       if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
@@ -90,6 +99,7 @@ export default function FormClient() {
         e.target.value = '';
         setValue('image', undefined);
         setImagePreview(null);
+        localStorage.removeItem('userImageData'); // Clear from localStorage
         return;
       }
 
@@ -98,12 +108,14 @@ export default function FormClient() {
         const dataUrl = reader.result as string;
         setValue('image', dataUrl, { shouldValidate: true });
         setImagePreview(dataUrl);
+        localStorage.setItem('userImageData', dataUrl); // Save to localStorage
         clearErrors('image');
       };
       reader.readAsDataURL(file);
     } else {
       setValue('image', undefined, { shouldValidate: true });
       setImagePreview(null);
+      localStorage.removeItem('userImageData'); // Clear from localStorage
     }
   };
 
@@ -119,9 +131,11 @@ export default function FormClient() {
       essayContentTop: data.essayContentTop || '',
       essayContentBottom: data.essayContentBottom || '',
       ngayThangNam: currentDate,
+      // Note: The image data itself is NOT part of dataToStore for Zustand
+      // It's handled separately via localStorage and imagePreview state.
     };
 
-    setFormData(dataToStore);
+    setFormData(dataToStore); // Save main form data to Zustand store
     router.push('/form/result');
   };
 

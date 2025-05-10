@@ -2,19 +2,7 @@ import { useEffect, useState, useRef, CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { toPng } from "html-to-image";
 import Image from "next/image";
-
-interface StoredFormData {
-  ngayThangNam: string;
-  motThoi: string;
-  thoiHanDaXa: string;
-  school: string;
-  class: string;
-  name: string;
-  // criticism: string; // Criticism will now be static text
-  essayContentTop?: string;
-  essayContentBottom?: string;
-  image?: string;
-}
+import { useFormStore } from "@/lib/form.store"; // Import form store
 
 const downloadDataUrl = (dataUrl: string, filename: string) => {
   const link = document.createElement("a");
@@ -46,25 +34,22 @@ const staticCriticismText =
 
 export default function ResultClient() {
   const router = useRouter();
-  const [formData, setFormData] = useState<StoredFormData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { formData } = useFormStore(); // Use form store data
+  const [displayImage, setDisplayImage] = useState<string | null>(null); // State for image from localStorage
   const [isDownloading, setIsDownloading] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
+  const [hasHydrated, setHasHydrated] = useState(false); // For hydration check
 
   useEffect(() => {
-    const storedData = localStorage.getItem("formData");
-    if (storedData) {
-      try {
-        const parsedData = JSON.parse(storedData) as StoredFormData;
-        setFormData(parsedData);
-      } catch (error) {
-        console.error("Failed to parse formData:", error);
-      }
-    }
-    setIsLoading(false);
-  }, []);
+    // Zustand persistence and localStorage reading happen client-side.
+    // This effect helps ensure we attempt to read them after hydration.
+    const storedImage = localStorage.getItem('userImageData');
+    setDisplayImage(storedImage);
+    setHasHydrated(true);
+  }, []); // Runs once on mount
+
   const handleDownload = async () => {
-    if (resultRef.current) {
+    if (resultRef.current && formData) { // Ensure formData is loaded
       setIsDownloading(true);
       await new Promise((resolve) => setTimeout(resolve, 100));
       try {
@@ -74,7 +59,7 @@ export default function ResultClient() {
         });
         downloadDataUrl(
           dataUrl,
-          `Một Thời - ${formData?.name || "result"}.png`
+          `Một Thời - ${formData.name || "result"}.png` // Use name from formData
         );
       } catch (error) {
         console.error("Download error:", error);
@@ -86,7 +71,8 @@ export default function ResultClient() {
     }
   };
 
-  if (isLoading) {
+  if (!hasHydrated) {
+    // Show a loading state until hydration & localStorage read attempt is complete
     return (
       <p className="text-center py-10 text-brand-blue text-sm">
         Đang tải kết quả...
@@ -95,9 +81,10 @@ export default function ResultClient() {
   }
 
   if (!formData) {
+    // formData from Zustand store is not available
     return (
       <div className="text-center py-10">
-        <p className="text-brand-error text-sm">Không tìm thấy dữ liệu.</p>
+        <p className="text-brand-error text-sm">Không tìm thấy dữ liệu form.</p>
         <button
           onClick={() => router.push("/form")}
           className="mt-4 px-4 py-2 bg-brand-blue text-white rounded text-sm hover:opacity-90"
@@ -107,6 +94,9 @@ export default function ResultClient() {
       </div>
     );
   }
+
+  // At this point, formData is available, and an attempt to load displayImage has been made.
+  // displayImage might be null if no image was stored, which is fine.
 
   const Sticker = ({
     src,
@@ -273,18 +263,18 @@ export default function ResultClient() {
 
           <div className="flex mt-2 flex-1 w-full space-x-3">
             {/* Uploaded Image Display (if exists) */}
-            {formData.image && (
+            {displayImage && ( // Use displayImage state
               <div className="w-[170px] flex-shrink-0 h-[160px] box-border">
                 <Image
                   width={170}
                   height={160}
-                  src={formData.image}
+                  src={displayImage} // Use displayImage state
                   alt="Kỷ niệm"
                   className="w-full h-full object-cover border border-brand-blue"
                 />
               </div>
             )}
-            {!formData.image && (
+            {!displayImage && ( // Use displayImage state
               <div className="w-[170px] flex-shrink-0 h-[160px] box-border border border-dashed border-brand-blue/50"></div>
             )}
 
@@ -315,7 +305,6 @@ export default function ResultClient() {
         </div>
       </div>
 
-      {/* {!isDownloading && ( */}
       <div className="text-center pb-2">
         <button
           onClick={handleDownload}
@@ -324,7 +313,6 @@ export default function ResultClient() {
           <span> {isDownloading ? "Đang tải..." : "Lưu lại kết quả"}</span>
         </button>
       </div>
-      {/* )} */}
     </div>
   );
 }
