@@ -38,7 +38,7 @@ export default function RootLayout({
         className={`${nvnMotherland.variable} ${vnfComicSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        <main className="content-wrapper flex h-screen w-full">
+        <main className="content-wrapper flex h-screen md:items-center md:justify-center w-full">
           {children}
         </main>
       </body>

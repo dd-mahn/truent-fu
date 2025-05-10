@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState, useRef, CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { toPng } from "html-to-image";
@@ -124,7 +122,7 @@ export default function ResultClient() {
       width={120}
       height={120}
       className={`absolute object-contain z-20 ${className}`}
-    /> // Ensure stickers are above lines if needed
+    />
   );
 
   return (
@@ -137,32 +135,32 @@ export default function ResultClient() {
         <Sticker
           src="/images/guitar.png"
           alt="Guitar Sticker"
-          className="top-5 -left-2 rotate-30 w-24 h-24 md:w-24 md:h-24"
+          className="top-5 md:-top-5  animate-shake -left-2 rotate-30 w-24 h-24 md:w-36 md:h-36"
         />
         <Sticker
           src="/images/drum.png"
           alt="Chopsticks Sticker"
-          className="top-[40%] left-2 -rotate-12 w-12"
+          className="top-[40%] left-2  animate-shake -rotate-12 w-12"
         />
         <Sticker
           src="/images/logo.png"
           alt="TruantFu Logo Sticker"
-          className="top-[45%] right-1 -translate-y-1/2 w-12 opacity-80"
+          className="top-[45%] right-1  animate-shake -translate-y-1/2 w-12 md:w-20 opacity-80"
         />
         <Sticker
           src="/images/band.png"
           alt="Thanks Sticker"
-          className="-bottom-4 left-3 rotate-6 w-34"
+          className="-bottom-4 left-3  animate-shake rotate-6 w-34 md:w-40"
         />
         <Sticker
           src="/images/guitar-blue.png"
           alt="Guitar Sticker"
-          className="-bottom-0 right-3 rotate-6 w-16"
+          className="-bottom-0 right-3  animate-shake rotate-6 w-16"
         />
         <Sticker
           src="/images/guitar-black.png"
           alt="Guitar Sticker 2"
-          className="top-4 right-0 w-20 h-20 md:w-24 md:h-24"
+          className="top-4 right-0 w-20  animate-shake h-20 md:w-24 md:h-24"
         />
 
         {/* Header - Replicating FormClient structure & style */}
@@ -256,7 +254,7 @@ export default function ResultClient() {
           >
             Lời phê của ban nhạc
           </h2>
-          <p className="text-[10px] md:text-sm italic whitespace-pre-wrap leading-relaxed text-justify text-brand-error font-nvn h-20 overflow-y-auto p-1 bg-transparent">
+          <p className="scrollbar-hide text-[10px] md:text-sm italic whitespace-pre-wrap leading-relaxed text-justify text-brand-error font-nvn h-20 overflow-y-auto p-1 bg-transparent">
             {staticCriticismText}
           </p>
         </div>
@@ -316,16 +314,16 @@ export default function ResultClient() {
         </div>
       </div>
 
-      {!isDownloading && (
-        <div className="text-center pb-2">
-          <button
-            onClick={handleDownload}
-            className="px-8 py-3 bg-transparent underline text-brand-blue text-lg font-semibold hover:opacity-90 transition-opacity duration-300 flex items-center justify-center mx-auto space-x-2 font-times"
-          >
-            <span>Lưu lại kết quả</span>
-          </button>
-        </div>
-      )}
+      {/* {!isDownloading && ( */}
+      <div className="text-center pb-2">
+        <button
+          onClick={handleDownload}
+          className="px-8 py-3 bg-transparent underline text-brand-blue text-lg font-semibold hover:opacity-90 transition-opacity duration-300 flex items-center justify-center mx-auto space-x-2 font-times"
+        >
+          <span> {isDownloading ? "Đang tải..." : "Lưu lại kết quả"}</span>
+        </button>
+      </div>
+      {/* )} */}
     </div>
   );
 }
