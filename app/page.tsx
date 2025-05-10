@@ -3,10 +3,10 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center gap-4 text-center">
+    <div className="flex flex-col flex-1 items-center bg-crumpled-paper justify-center gap-4 text-center">
       {/* Crumpled paper background should be set in globals.css on body */}
 
-      <div className="">
+      <div className="px-2">
         {" "}
         {/* Pushes content down a bit, but primarily relies on justify-center */}
         <p className="text-base leading-relaxed font-medium text-black font-nvn">

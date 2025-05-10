@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useState, ChangeEvent, CSSProperties } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
+import { toast } from 'sonner';
+import { useFormStore, FormData as StoreFormData } from '@/lib/form.store';
 
 const FormSchema = z.object({
   motThoi: z.string().min(1, 'Tiêu đề \'Một Thời\' không được để trống'),
@@ -15,13 +17,10 @@ const FormSchema = z.object({
   name: z.string().min(1, 'Họ và tên không được để trống'),
   essayContentTop: z.string().optional(),
   essayContentBottom: z.string().optional(),
-  image: z.any().optional()
-    .refine((files) => files === undefined || files === null || (files && files.length > 0), 'Ảnh không được để trống.')
-    .refine((files) => files === undefined || files === null || (files && files[0]?.size <= 64 * 1024 * 1024), `Kích thước ảnh tối đa là 64MB.`)
-    .refine(
-      (files) => files === undefined || files === null || (files && ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(files[0]?.type)),
-      'Chỉ chấp nhận file ảnh (JPEG, PNG, WEBP, GIF).'
-    )
+  image: z.string().optional()
+    .refine((val) => val === undefined || val === null || (typeof val === 'string' && val.startsWith('data:image/')), {
+      message: 'Ảnh không hợp lệ. Vui lòng chọn lại.',
+    })
 }).refine(data => {
   const topContent = data.essayContentTop?.trim() || '';
   const bottomContent = data.essayContentBottom?.trim() || '';
@@ -49,56 +48,80 @@ const getLinedBackgroundStyle = (hasError: boolean): CSSProperties => {
 export default function FormClient() {
   const router = useRouter();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-
+  const { formData, setFormData } = useFormStore();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     setValue,
+    clearErrors,
   } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
-    defaultValues: {
-      motThoi: '',
-      thoiHanDaXa: '',
-      school: '',
-      class: '',
-      name: '',
-      essayContentTop: '',
-      essayContentBottom: '',
-    }
+    defaultValues: formData 
+      ? { 
+          ...formData, 
+          image: undefined 
+        } 
+      : {
+          motThoi: '',
+          thoiHanDaXa: '',
+          school: '',
+          class: '',
+          name: '',
+          essayContentTop: '',
+          essayContentBottom: '',
+          image: undefined,
+        }
   });
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setValue('image', e.target.files);
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Kích thước ảnh tối đa là 10MB.');
+        e.target.value = '';
+        setValue('image', undefined);
+        setImagePreview(null);
+        return;
+      }
+      if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+        toast.error('Chỉ chấp nhận file ảnh (JPEG, PNG, WEBP, GIF).');
+        e.target.value = '';
+        setValue('image', undefined);
+        setImagePreview(null);
+        return;
+      }
+
       const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result as string);
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        setValue('image', dataUrl, { shouldValidate: true });
+        setImagePreview(dataUrl);
+        clearErrors('image');
+      };
       reader.readAsDataURL(file);
     } else {
-      setValue('image', null);
+      setValue('image', undefined, { shouldValidate: true });
       setImagePreview(null);
     }
   };
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     const currentDate = new Date().toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' }).replace(' tháng', ' Tháng');
-    // const combinedEssayContent = `${data.essayContentTop || ''}\n${data.essayContentBottom || ''}`.trim(); // No longer combining here for storage
     
-    const dataToStore = {
+    const dataToStore: StoreFormData = {
       motThoi: data.motThoi,
       thoiHanDaXa: data.thoiHanDaXa,
       school: data.school,
       class: data.class,
       name: data.name,
-      essayContentTop: data.essayContentTop || '', // Store separately
-      essayContentBottom: data.essayContentBottom || '', // Store separately
+      essayContentTop: data.essayContentTop || '',
+      essayContentBottom: data.essayContentBottom || '',
       ngayThangNam: currentDate,
-      // essayContent: combinedEssayContent, // Removed combined field for now
     };
 
-    localStorage.setItem('formData', JSON.stringify(dataToStore));
+    setFormData(dataToStore);
     router.push('/form/result');
   };
 
@@ -164,7 +187,6 @@ export default function FormClient() {
         </div>
         <div 
           className={`px-2 py-1 box-border flex-grow-[1] ml-4 flex h-[100px] w-[100px] flex-col items-center justify-start bg-transparent border ${errors.image ? 'border-brand-error' : 'border-brand-blue'}`} 
-          // style={{height: studentInfoHeight > 0 ? `${studentInfoHeight}px` : '100px', width: studentInfoHeight > 0 ? `${studentInfoHeight}px` : '100px'}}
         >
           <p className={`${labelClass} text-sm italic underline mb-1`}>Điểm</p>
         </div>
@@ -196,7 +218,7 @@ export default function FormClient() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                   </svg>
                   <p className="text-[14px] leading-tight font-times font-bold">Chọn file ảnh</p>
-                  <p className="text-[10px] leading-tight font-times mt-0.5 font-bold">Tối đa: 64 MB</p>
+                  <p className="text-[10px] leading-tight font-times mt-0.5 font-bold">Tối đa: 10 MB</p>
                 </>
               )}
             </label>
@@ -205,7 +227,7 @@ export default function FormClient() {
           <div className="flex-grow h-[160px] box-border">
             <textarea
               {...register('essayContentTop')}
-              placeholder="Nhập câu trả lời..."
+              placeholder="Mùa hè năm ấy, tớ..."
               className={`${textareaBaseStyle} h-full`} 
               style={getLinedBackgroundStyle(!!errors.essayContentTop)} 
             />
@@ -215,6 +237,7 @@ export default function FormClient() {
           <textarea
             {...register('essayContentBottom')}
             rows={6} 
+            placeholder="Tớ vẫn nhớ..."
             className={`${textareaBaseStyle}`}
             style={getLinedBackgroundStyle(!!errors.essayContentTop)} 
           />

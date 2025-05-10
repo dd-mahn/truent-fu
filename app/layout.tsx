@@ -17,18 +17,14 @@ const vnfComicSans = localFont({
   display: 'swap',
 });
 
-// Define Times New Roman (using a generic system font stack is often better for cross-platform compatibility)
-// For simplicity, we will apply Times New Roman directly in globals.css or components.
-// If you specifically need a next/font instance for Times New Roman, it would be via google fonts if available or another local font file.
-
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Một Thời Kỷ Niệm",
-  description: "Lưu giữ những kỷ niệm học sinh",
+  title: "Một Thời",
+  description: "Truant Fu & Một Thời",
 };
 
 export default function RootLayout({
