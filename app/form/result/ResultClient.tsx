@@ -91,9 +91,17 @@ export default function ResultClient() {
       const maxAttempts = isSafari ? 5 : 1;
       let lastDataUrlLength = 0;
 
+      // Define the filter function to exclude stickers
+      const filter = (node: HTMLElement) => {
+        // Check if the node is an element and has the class
+        if (node.classList && typeof node.classList.contains === 'function') {
+          return !node.classList.contains('exclude-from-download');
+        }
+        return true; // Keep other nodes
+      };
+
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
         if (attempt > 0) {
-          // Add a small delay between retries for Safari
           await new Promise(resolve => setTimeout(resolve, 300 * attempt)); 
         }
 
@@ -103,10 +111,8 @@ export default function ResultClient() {
           skipAutoScale: true,
           width: element.offsetWidth,
           height: element.offsetHeight,
-          fetchRequestInit: { cache: 'no-cache' }, // Suggested in GitHub issue
-          // For very stubborn cases with external images or fonts on Safari:
-          // You might need to use `imagePlaceholder` or `fontEmbedCSS` options
-          // or ensure all images are fully loaded *before* calling toPng.
+          fetchRequestInit: { cache: 'no-cache' },
+          filter: filter, // Add the filter here
         });
         
         dataUrl = currentDataUrl;
@@ -186,13 +192,14 @@ export default function ResultClient() {
     alt: string;
     className?: string;
   }) => (
-    <img
+    <Image
       key={src}
       src={src}
       alt={alt}
       width={120}
       height={120}
-      className={`absolute object-contain z-20 ${className}`}
+      className={`absolute object-contain z-20 exclude-from-download ${className || ''}`}
+      unoptimized={true}
     />
   );
 
