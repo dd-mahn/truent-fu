@@ -73,23 +73,78 @@ export default function ResultClient() {
   }, []);
 
   const handleDownload = async () => {
-    if (resultRef.current && retrievedFormData) { // Check retrievedFormData
-      setIsDownloading(true);
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      try {
-        const dataUrl = await toPng(resultRef.current, {
+    if (!resultRef.current || !retrievedFormData) {
+      console.error("Download prerequisites not met: DOM element or form data missing.");
+      alert("Không thể tải xuống: dữ liệu hoặc phần tử DOM bị thiếu.");
+      return;
+    }
+
+    setIsDownloading(true);
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Small delay for rendering
+
+    let success = false;
+    try {
+      const element = resultRef.current;
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      
+      let dataUrl = '';
+      const maxAttempts = isSafari ? 5 : 1;
+      let lastDataUrlLength = 0;
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        if (attempt > 0) {
+          // Add a small delay between retries for Safari
+          await new Promise(resolve => setTimeout(resolve, 300 * attempt)); 
+        }
+
+        const currentDataUrl = await toPng(element, {
           cacheBust: true,
           pixelRatio: 2,
+          skipAutoScale: true,
+          width: element.offsetWidth,
+          height: element.offsetHeight,
+          fetchRequestInit: { cache: 'no-cache' }, // Suggested in GitHub issue
+          // For very stubborn cases with external images or fonts on Safari:
+          // You might need to use `imagePlaceholder` or `fontEmbedCSS` options
+          // or ensure all images are fully loaded *before* calling toPng.
         });
-        downloadDataUrl(
-          dataUrl,
-          `Một Thời - ${retrievedFormData.name || "result"}.png` // Use name from retrievedFormData
-        );
-      } catch (error) {
-        console.error("Download error:", error);
-        alert("Không thể tải ảnh xuống. Vui lòng thử lại.");
-      } finally {
-        setIsDownloading(false);
+        
+        dataUrl = currentDataUrl;
+
+        if (isSafari) {
+          if (dataUrl.length > lastDataUrlLength) {
+            lastDataUrlLength = dataUrl.length;
+            if (attempt < maxAttempts -1) continue; // Continue if length increased and not last attempt
+          } else {
+            // Length did not increase or decreased, likely stable or an issue
+            break; 
+          }
+        } else {
+          // Not Safari, or Safari but on the last attempt
+          break;
+        }
+      }
+
+      if (!dataUrl || dataUrl.length === 0) {
+        throw new Error("Generated image data URL is empty.");
+      }
+
+      downloadDataUrl(
+        dataUrl,
+        `Một Thời - ${retrievedFormData.name || "result"}.png`
+      );
+      success = true;
+    } catch (error) {
+      console.error("Download error:", error);
+      let message = "Không thể tải ảnh xuống. Vui lòng thử lại.";
+      if (error instanceof Error && error.message) {
+          message += ` Lỗi: ${error.message}`;
+      }
+      alert(message);
+      success = false;
+    } finally {
+      setIsDownloading(false);
+      if (success) {
         router.push("/form");
       }
     }
