@@ -81,6 +81,7 @@ export default function ResultClient() {
         alert("Không thể tải ảnh xuống. Vui lòng thử lại.");
       } finally {
         setIsDownloading(false);
+        router.push("/form");
       }
     }
   };
