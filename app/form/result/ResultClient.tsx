@@ -213,22 +213,22 @@ export default function ResultClient() {
   );
 
   return (
-    <div className={`pt-16 md:pt-0 max-w-2xl mx-auto font-times relative bg-crumpled-paper`}>
+    <div className={`pt-24 md:pt-0 max-w-2xl mx-auto font-times relative bg-crumpled-paper`}>
       {/* Stickers */}
       <Sticker
         src="/images/guitar.png"
         alt="Guitar Sticker"
-        className="top-9 md:-top-5  animate-shake -left-2 rotate-30 w-24 h-24 md:w-36 md:h-36"
+        className="top-12 md:-top-5  animate-shake -left-2 rotate-30 w-24 h-24 md:w-36 md:h-36"
       />
       <Sticker
         src="/images/drum.png"
         alt="Chopsticks Sticker"
-        className=" top-[41%] md:top-[40%] left-2  animate-shake -rotate-12 w-12"
+        className=" top-[45%] md:top-[40%] left-2  animate-shake -rotate-12 w-12"
       />
       <Sticker
         src="/images/logo.png"
         alt="TruantFu Logo Sticker"
-        className="top-[44%] md:top-[45%] right-1  animate-shake -translate-y-1/2 w-12 md:w-20 opacity-80"
+        className="top-[48%] md:top-[45%] right-1  animate-shake -translate-y-1/2 w-12 md:w-20 opacity-80"
       />
       <Sticker
         src="/images/band.png"
@@ -243,7 +243,7 @@ export default function ResultClient() {
       <Sticker
         src="/images/guitar-black.png"
         alt="Guitar Sticker 2"
-        className="top-4 right-0 w-20  animate-shake h-20 md:w-24 md:h-24"
+        className="top-12 right-0 w-20  animate-shake h-20 md:w-24 md:h-24"
       />
       <div
         ref={resultRef}
