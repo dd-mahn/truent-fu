@@ -45,7 +45,8 @@ const staticCriticismText =
 
 export default function ResultClient() {
   const router = useRouter();
-  const [retrievedFormData, setRetrievedFormData] = useState<LocalStorageFormData | null>(null);
+  const [retrievedFormData, setRetrievedFormData] =
+    useState<LocalStorageFormData | null>(null);
   const [displayImage, setDisplayImage] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -53,10 +54,12 @@ export default function ResultClient() {
 
   useEffect(() => {
     // Attempt to read both main form data and image data from localStorage.
-    const storedFormDataString = localStorage.getItem('formData');
+    const storedFormDataString = localStorage.getItem("formData");
     if (storedFormDataString) {
       try {
-        const parsedData = JSON.parse(storedFormDataString) as LocalStorageFormData;
+        const parsedData = JSON.parse(
+          storedFormDataString
+        ) as LocalStorageFormData;
         setRetrievedFormData(parsedData);
       } catch (error) {
         console.error("Failed to parse formData from localStorage:", error);
@@ -66,30 +69,95 @@ export default function ResultClient() {
       setRetrievedFormData(null); // Ensure it's null if not found
     }
 
-    const storedImage = localStorage.getItem('userImageData');
+    const storedImage = localStorage.getItem("userImageData");
     setDisplayImage(storedImage);
-    
+
     setHasHydrated(true);
   }, []);
 
   const handleDownload = async () => {
-    if (resultRef.current && retrievedFormData) { // Check retrievedFormData
-      setIsDownloading(true);
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      try {
-        const dataUrl = await toPng(resultRef.current, {
+    if (!resultRef.current || !retrievedFormData) {
+      console.error(
+        "Download prerequisites not met: DOM element or form data missing."
+      );
+      alert("Không thể tải xuống: dữ liệu hoặc phần tử DOM bị thiếu.");
+      return;
+    }
+
+    setIsDownloading(true);
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Small delay for rendering
+
+    let success = false;
+    try {
+      const element = resultRef.current;
+      const isSafari = /^((?!chrome|android).)*safari/i.test(
+        navigator.userAgent
+      );
+
+      let dataUrl = "";
+      const maxAttempts = isSafari ? 5 : 1;
+      let lastDataUrlLength = 0;
+
+      // Define the filter function to exclude stickers
+      const filter = (node: HTMLElement) => {
+        // Check if the node is an element and has the class
+        if (node.classList && typeof node.classList.contains === "function") {
+          return !node.classList.contains("exclude-from-download");
+        }
+        return true; // Keep other nodes
+      };
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        if (attempt > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
+        }
+
+        const currentDataUrl = await toPng(element, {
           cacheBust: true,
           pixelRatio: 2,
+          skipAutoScale: true,
+          width: element.offsetWidth,
+          height: element.offsetHeight,
+          fetchRequestInit: { cache: "no-cache" },
+          filter: filter, // Add the filter here
         });
-        downloadDataUrl(
-          dataUrl,
-          `Một Thời - ${retrievedFormData.name || "result"}.png` // Use name from retrievedFormData
-        );
-      } catch (error) {
-        console.error("Download error:", error);
-        alert("Không thể tải ảnh xuống. Vui lòng thử lại.");
-      } finally {
-        setIsDownloading(false);
+
+        dataUrl = currentDataUrl;
+
+        if (isSafari) {
+          if (dataUrl.length > lastDataUrlLength) {
+            lastDataUrlLength = dataUrl.length;
+            if (attempt < maxAttempts - 1) continue; // Continue if length increased and not last attempt
+          } else {
+            // Length did not increase or decreased, likely stable or an issue
+            break;
+          }
+        } else {
+          // Not Safari, or Safari but on the last attempt
+          break;
+        }
+      }
+
+      if (!dataUrl || dataUrl.length === 0) {
+        throw new Error("Generated image data URL is empty.");
+      }
+
+      downloadDataUrl(
+        dataUrl,
+        `Một Thời - ${retrievedFormData.name || "result"}.png`
+      );
+      success = true;
+    } catch (error) {
+      console.error("Download error:", error);
+      let message = "Không thể tải ảnh xuống. Vui lòng thử lại.";
+      if (error instanceof Error && error.message) {
+        message += ` Lỗi: ${error.message}`;
+      }
+      alert(message);
+      success = false;
+    } finally {
+      setIsDownloading(false);
+      if (success) {
         router.push("/form");
       }
     }
@@ -132,57 +200,59 @@ export default function ResultClient() {
     className?: string;
   }) => (
     <Image
+      key={src}
       src={src}
       alt={alt}
       width={120}
       height={120}
-      className={`absolute object-contain z-20 ${className}`}
+      className={`absolute object-contain z-20 exclude-from-download ${
+        className || ""
+      }`}
+      unoptimized={true}
     />
   );
 
   return (
-    <div className="max-w-2xl mx-auto font-times bg-crumpled-paper">
+    <div className="max-w-2xl mx-auto font-times relative bg-crumpled-paper">
+      {/* Stickers */}
+      <Sticker
+        src="/images/guitar.png"
+        alt="Guitar Sticker"
+        className="top-5 md:-top-5  animate-shake -left-2 rotate-30 w-24 h-24 md:w-36 md:h-36"
+      />
+      <Sticker
+        src="/images/drum.png"
+        alt="Chopsticks Sticker"
+        className="top-[40%] left-2  animate-shake -rotate-12 w-12"
+      />
+      <Sticker
+        src="/images/logo.png"
+        alt="TruantFu Logo Sticker"
+        className="top-[45%] right-1  animate-shake -translate-y-1/2 w-12 md:w-20 opacity-80"
+      />
+      <Sticker
+        src="/images/band.png"
+        alt="Thanks Sticker"
+        className="-bottom-4 left-3  animate-shake rotate-6 w-34 md:w-40"
+      />
+      <Sticker
+        src="/images/guitar-blue.png"
+        alt="Guitar Sticker"
+        className="-bottom-0 right-3  animate-shake rotate-6 w-16"
+      />
+      <Sticker
+        src="/images/guitar-black.png"
+        alt="Guitar Sticker 2"
+        className="top-4 right-0 w-20  animate-shake h-20 md:w-24 md:h-24"
+      />
       <div
         ref={resultRef}
-        className="bg-crumpled-paper p-4 md:p-6 pb-8 text-sm relative overflow-hidden font-times"
+        className="bg-crumpled-paper p-4 md:p-6 pb-8 text-sm overflow-hidden font-times"
       >
-        {/* Stickers */}
-        <Sticker
-          src="/images/guitar.png"
-          alt="Guitar Sticker"
-          className="top-5 md:-top-5  animate-shake -left-2 rotate-30 w-24 h-24 md:w-36 md:h-36"
-        />
-        <Sticker
-          src="/images/drum.png"
-          alt="Chopsticks Sticker"
-          className="top-[40%] left-2  animate-shake -rotate-12 w-12"
-        />
-        <Sticker
-          src="/images/logo.png"
-          alt="TruantFu Logo Sticker"
-          className="top-[45%] right-1  animate-shake -translate-y-1/2 w-12 md:w-20 opacity-80"
-        />
-        <Sticker
-          src="/images/band.png"
-          alt="Thanks Sticker"
-          className="-bottom-4 left-3  animate-shake rotate-6 w-34 md:w-40"
-        />
-        <Sticker
-          src="/images/guitar-blue.png"
-          alt="Guitar Sticker"
-          className="-bottom-0 right-3  animate-shake rotate-6 w-16"
-        />
-        <Sticker
-          src="/images/guitar-black.png"
-          alt="Guitar Sticker 2"
-          className="top-4 right-0 w-20  animate-shake h-20 md:w-24 md:h-24"
-        />
-
         {/* Header - Replicating FormClient structure & style */}
         <div className="text-center mb-4 relative z-10">
           <p className={`${labelClass} text-sm`}>
-            Ngày{" "}
-            {retrievedFormData.ngayThangNam}
+            Ngày {retrievedFormData.ngayThangNam}
           </p>
           <div className="flex items-baseline justify-center space-x-2">
             <span className={`${labelClass} text-[18px] uppercase`}>
@@ -313,7 +383,9 @@ export default function ResultClient() {
             {Array.from({
               length: Math.max(
                 0,
-                6 - (retrievedFormData.essayContentBottom || "").split("\n").length
+                6 -
+                  (retrievedFormData.essayContentBottom || "").split("\n")
+                    .length
               ),
             }).map((_, i) => (
               <div key={`fill-line-${i}`} style={{ height: "1.625em" }}></div>
