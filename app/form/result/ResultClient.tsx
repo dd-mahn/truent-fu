@@ -218,7 +218,7 @@ export default function ResultClient() {
       <Sticker
         src="/images/guitar.png"
         alt="Guitar Sticker"
-        className="top-12 md:-top-5  animate-shake -left-2 rotate-30 w-24 h-24 md:w-36 md:h-36"
+        className="top-18 md:-top-5  animate-shake -left-2 rotate-30 w-24 h-24 md:w-36 md:h-36"
       />
       <Sticker
         src="/images/drum.png"
@@ -243,7 +243,7 @@ export default function ResultClient() {
       <Sticker
         src="/images/guitar-black.png"
         alt="Guitar Sticker 2"
-        className="top-12 right-0 w-20  animate-shake h-20 md:w-24 md:h-24"
+        className="top-18 right-0 w-20  animate-shake h-20 md:w-24 md:h-24"
       />
       <div
         ref={resultRef}
