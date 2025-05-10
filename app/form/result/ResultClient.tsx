@@ -223,17 +223,17 @@ export default function ResultClient() {
       <Sticker
         src="/images/drum.png"
         alt="Chopsticks Sticker"
-        className="top-[40%] left-2  animate-shake -rotate-12 w-12"
+        className=" top-[37%] md:top-[40%] left-2  animate-shake -rotate-12 w-12"
       />
       <Sticker
         src="/images/logo.png"
         alt="TruantFu Logo Sticker"
-        className="top-[45%] right-1  animate-shake -translate-y-1/2 w-12 md:w-20 opacity-80"
+        className="top-[40%] md:top-[45%] right-1  animate-shake -translate-y-1/2 w-12 md:w-20 opacity-80"
       />
       <Sticker
         src="/images/band.png"
         alt="Thanks Sticker"
-        className="-bottom-4 left-3  animate-shake rotate-6 w-34 md:w-40"
+        className="-bottom-0 left-3  animate-shake rotate-6 w-34 md:w-40"
       />
       <Sticker
         src="/images/guitar-blue.png"
