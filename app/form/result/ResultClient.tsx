@@ -252,7 +252,7 @@ export default function ResultClient() {
         {/* Header - Replicating FormClient structure & style */}
         <div className="text-center mb-4 relative z-10">
           <p className={`${labelClass} text-sm`}>
-            Ngày {retrievedFormData.ngayThangNam}
+            {retrievedFormData.ngayThangNam}
           </p>
           <div className="flex items-baseline justify-center space-x-2">
             <span className={`${labelClass} text-[18px] uppercase`}>
