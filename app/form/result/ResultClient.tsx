@@ -2,7 +2,18 @@ import { useEffect, useState, useRef, CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { toPng } from "html-to-image";
 import Image from "next/image";
-import { useFormStore } from "@/lib/form.store"; // Import form store
+
+// Define an interface for the formData expected from localStorage
+interface LocalStorageFormData {
+  motThoi: string;
+  thoiHanDaXa: string;
+  school: string;
+  class: string;
+  name: string;
+  essayContentTop?: string;
+  essayContentBottom?: string;
+  ngayThangNam: string;
+}
 
 const downloadDataUrl = (dataUrl: string, filename: string) => {
   const link = document.createElement("a");
@@ -34,22 +45,35 @@ const staticCriticismText =
 
 export default function ResultClient() {
   const router = useRouter();
-  const { formData } = useFormStore(); // Use form store data
-  const [displayImage, setDisplayImage] = useState<string | null>(null); // State for image from localStorage
+  const [retrievedFormData, setRetrievedFormData] = useState<LocalStorageFormData | null>(null);
+  const [displayImage, setDisplayImage] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
-  const [hasHydrated, setHasHydrated] = useState(false); // For hydration check
+  const [hasHydrated, setHasHydrated] = useState(false);
 
   useEffect(() => {
-    // Zustand persistence and localStorage reading happen client-side.
-    // This effect helps ensure we attempt to read them after hydration.
+    // Attempt to read both main form data and image data from localStorage.
+    const storedFormDataString = localStorage.getItem('formData');
+    if (storedFormDataString) {
+      try {
+        const parsedData = JSON.parse(storedFormDataString) as LocalStorageFormData;
+        setRetrievedFormData(parsedData);
+      } catch (error) {
+        console.error("Failed to parse formData from localStorage:", error);
+        setRetrievedFormData(null); // Ensure it's null if parsing fails
+      }
+    } else {
+      setRetrievedFormData(null); // Ensure it's null if not found
+    }
+
     const storedImage = localStorage.getItem('userImageData');
     setDisplayImage(storedImage);
+    
     setHasHydrated(true);
-  }, []); // Runs once on mount
+  }, []);
 
   const handleDownload = async () => {
-    if (resultRef.current && formData) { // Ensure formData is loaded
+    if (resultRef.current && retrievedFormData) { // Check retrievedFormData
       setIsDownloading(true);
       await new Promise((resolve) => setTimeout(resolve, 100));
       try {
@@ -59,7 +83,7 @@ export default function ResultClient() {
         });
         downloadDataUrl(
           dataUrl,
-          `Một Thời - ${formData.name || "result"}.png` // Use name from formData
+          `Một Thời - ${retrievedFormData.name || "result"}.png` // Use name from retrievedFormData
         );
       } catch (error) {
         console.error("Download error:", error);
@@ -80,8 +104,8 @@ export default function ResultClient() {
     );
   }
 
-  if (!formData) {
-    // formData from Zustand store is not available
+  if (!retrievedFormData) {
+    // formData from localStorage is not available
     return (
       <div className="text-center py-10">
         <p className="text-brand-error text-sm">Không tìm thấy dữ liệu form.</p>
@@ -95,7 +119,7 @@ export default function ResultClient() {
     );
   }
 
-  // At this point, formData is available, and an attempt to load displayImage has been made.
+  // At this point, retrievedFormData is available, and an attempt to load displayImage has been made.
   // displayImage might be null if no image was stored, which is fine.
 
   const Sticker = ({
@@ -158,14 +182,7 @@ export default function ResultClient() {
         <div className="text-center mb-4 relative z-10">
           <p className={`${labelClass} text-sm`}>
             Ngày{" "}
-            {new Date()
-              .toLocaleDateString("vi-VN", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })
-              .replace(" tháng", " Tháng")
-              .replace(",", " Năm")}
+            {retrievedFormData.ngayThangNam}
           </p>
           <div className="flex items-baseline justify-center space-x-2">
             <span className={`${labelClass} text-[18px] uppercase`}>
@@ -175,7 +192,7 @@ export default function ResultClient() {
               className={`${valueBaseStyle} border-b border-brand-blue px-0 pt-1 pb-[1px]`}
               style={{ width: "125px", display: "inline-block" }}
             >
-              {formData.motThoi}
+              {retrievedFormData.motThoi}
             </span>
           </div>
           <div className="flex items-baseline justify-center space-x-2">
@@ -184,7 +201,7 @@ export default function ResultClient() {
               className={`${valueBaseStyle} border-b border-brand-blue px-0 pt-1 pb-[1px]`}
               style={{ width: "80px", display: "inline-block" }}
             >
-              {formData.thoiHanDaXa}
+              {retrievedFormData.thoiHanDaXa}
             </span>
           </div>
         </div>
@@ -197,7 +214,7 @@ export default function ResultClient() {
               <span
                 className={`${valueBaseStyle} border-b border-brand-blue flex-1 px-0 pt-1 pb-[1px]`}
               >
-                {formData.school}
+                {retrievedFormData.school}
               </span>
             </div>
             <div className="flex items-baseline">
@@ -205,7 +222,7 @@ export default function ResultClient() {
               <span
                 className={`${valueBaseStyle} border-b border-brand-blue flex-1 px-0 pt-1 pb-[1px]`}
               >
-                {formData.class}
+                {retrievedFormData.class}
               </span>
             </div>
             <div className="flex items-baseline">
@@ -215,7 +232,7 @@ export default function ResultClient() {
               <span
                 className={`${valueBaseStyle} border-b border-brand-blue flex-1 px-0 pt-1 pb-[1px]`}
               >
-                {formData.name}
+                {retrievedFormData.name}
               </span>
             </div>
           </div>
@@ -283,7 +300,7 @@ export default function ResultClient() {
               className="flex-grow h-[160px] box-border whitespace-pre-wrap overflow-hidden font-comic text-sm text-black"
               style={getLinedBackgroundStyle()}
             >
-              {formData.essayContentTop || ""}
+              {retrievedFormData.essayContentTop || ""}
             </div>
           </div>
           {/* Essay Bottom Part - lined background */}
@@ -291,12 +308,12 @@ export default function ResultClient() {
             className="flex-1 w-full mt-0 whitespace-pre-wrap overflow-hidden font-comic text-sm text-black"
             style={getLinedBackgroundStyle()}
           >
-            {formData.essayContentBottom || ""}
+            {retrievedFormData.essayContentBottom || ""}
             {/* Fill remaining lines if content is short, to show full lined paper effect */}
             {Array.from({
               length: Math.max(
                 0,
-                6 - (formData.essayContentBottom || "").split("\n").length
+                6 - (retrievedFormData.essayContentBottom || "").split("\n").length
               ),
             }).map((_, i) => (
               <div key={`fill-line-${i}`} style={{ height: "1.625em" }}></div>

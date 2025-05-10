@@ -7,7 +7,6 @@ import { useState, ChangeEvent, CSSProperties, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { useFormStore, FormData as StoreFormData } from '@/lib/form.store';
 
 const FormSchema = z.object({
   motThoi: z.string().min(1, 'Tiêu đề \'Một Thời\' không được để trống'),
@@ -45,10 +44,49 @@ const getLinedBackgroundStyle = (hasError: boolean): CSSProperties => {
   };
 };
 
+// Helper function to compress image via canvas
+async function compressImage(dataUrl: string, quality: number = 0.7, maxDimension: number = 1024): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = document.createElement('img');
+    img.onload = () => {
+      let { width, height } = img;
+
+      // Adjust dimensions if they exceed maxDimension, maintaining aspect ratio
+      if (width > height) {
+        if (width > maxDimension) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        }
+      } else {
+        if (height > maxDimension) {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        return reject(new Error('Failed to get canvas context'));
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality)); // Convert to JPEG with specified quality
+    };
+    img.onerror = (error) => {
+      console.error("Image load error for compression:", error);
+      reject(new Error('Failed to load image for compression'));
+    };
+    img.src = dataUrl;
+  });
+}
+
 export default function FormClient() {
   const router = useRouter();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const { formData, setFormData } = useFormStore();
 
   const {
     register,
@@ -56,42 +94,58 @@ export default function FormClient() {
     formState: { errors },
     setValue,
     clearErrors,
+    reset,
   } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
-    defaultValues: formData 
-      ? { 
-          ...formData, 
-          image: undefined
-        } 
-      : {
-          motThoi: '',
-          thoiHanDaXa: '',
-          school: '',
-          class: '',
-          name: '',
-          essayContentTop: '',
-          essayContentBottom: '',
-          image: undefined,
-        }
+    defaultValues: {
+      motThoi: '',
+      thoiHanDaXa: '',
+      school: '',
+      class: '',
+      name: '',
+      essayContentTop: '',
+      essayContentBottom: '',
+      image: undefined,
+    }
   });
 
   useEffect(() => {
-    const storedImage = localStorage.getItem('userImageData');
-    if (storedImage) {
-      setImagePreview(storedImage);
-      setValue('image', storedImage, { shouldValidate: true });
+    const storedFormDataString = localStorage.getItem('formData');
+    if (storedFormDataString) {
+      try {
+        const parsedFormData = JSON.parse(storedFormDataString);
+        const completeFormData: Partial<FormValues> = {
+            motThoi: parsedFormData.motThoi || '',
+            thoiHanDaXa: parsedFormData.thoiHanDaXa || '',
+            school: parsedFormData.school || '',
+            class: parsedFormData.class || '',
+            name: parsedFormData.name || '',
+            essayContentTop: parsedFormData.essayContentTop || '',
+            essayContentBottom: parsedFormData.essayContentBottom || '',
+        };
+        reset(completeFormData);
+      } catch (error) {
+        console.error("Failed to parse formData from localStorage for reset:", error);
+      }
     }
-  }, [setValue]);
+
+    const storedUserImage = localStorage.getItem('userImageData');
+    if (storedUserImage) {
+      setImagePreview(storedUserImage);
+      setValue('image', storedUserImage, { shouldValidate: true });
+    }
+  }, [reset, setValue]);
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error('Kích thước ảnh tối đa là 10MB.');
+      // Client-side validation for original file size (still useful)
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit for the original upload
+        toast.error('Kích thước file gốc tối đa là 10MB.');
         e.target.value = '';
         setValue('image', undefined);
         setImagePreview(null);
-        localStorage.removeItem('userImageData'); // Clear from localStorage
+        localStorage.removeItem('userImageData');
         return;
       }
       if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
@@ -99,30 +153,62 @@ export default function FormClient() {
         e.target.value = '';
         setValue('image', undefined);
         setImagePreview(null);
-        localStorage.removeItem('userImageData'); // Clear from localStorage
+        localStorage.removeItem('userImageData');
         return;
       }
 
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string;
-        setValue('image', dataUrl, { shouldValidate: true });
-        setImagePreview(dataUrl);
-        localStorage.setItem('userImageData', dataUrl); // Save to localStorage
-        clearErrors('image');
+      reader.onloadend = async () => { // Make this async to await compression
+        const originalDataUrl = reader.result as string;
+        try {
+          toast.promise(
+            compressImage(originalDataUrl), // Call the compression function
+            {
+              loading: 'Đang nén ảnh...',
+              success: (compressedDataUrl) => {
+                setValue('image', compressedDataUrl, { shouldValidate: true });
+                setImagePreview(compressedDataUrl);
+                localStorage.setItem('userImageData', compressedDataUrl);
+                clearErrors('image');
+                return 'Ảnh đã được nén!';
+              },
+              error: (err) => {
+                console.error("Compression error:", err);
+                // Fallback to original if compression fails, or handle error differently
+                setValue('image', originalDataUrl, { shouldValidate: true });
+                setImagePreview(originalDataUrl);
+                localStorage.setItem('userImageData', originalDataUrl);
+                return 'Nén ảnh thất bại, sử dụng ảnh gốc.';
+              },
+            }
+          );
+        } catch (error) {
+          console.error("Error during image processing:", error);
+          toast.error('Xử lý ảnh thất bại.');
+          // Fallback to original if compression fails
+          setValue('image', originalDataUrl, { shouldValidate: true });
+          setImagePreview(originalDataUrl);
+          localStorage.setItem('userImageData', originalDataUrl);
+        }
+      };
+      reader.onerror = () => {
+        toast.error('Không thể đọc file ảnh.');
+        setValue('image', undefined);
+        setImagePreview(null);
+        localStorage.removeItem('userImageData');
       };
       reader.readAsDataURL(file);
     } else {
       setValue('image', undefined, { shouldValidate: true });
       setImagePreview(null);
-      localStorage.removeItem('userImageData'); // Clear from localStorage
+      localStorage.removeItem('userImageData');
     }
   };
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     const currentDate = new Date().toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' }).replace(' tháng', ' Tháng');
     
-    const dataToStore: StoreFormData = {
+    const dataToStore = {
       motThoi: data.motThoi,
       thoiHanDaXa: data.thoiHanDaXa,
       school: data.school,
@@ -131,11 +217,9 @@ export default function FormClient() {
       essayContentTop: data.essayContentTop || '',
       essayContentBottom: data.essayContentBottom || '',
       ngayThangNam: currentDate,
-      // Note: The image data itself is NOT part of dataToStore for Zustand
-      // It's handled separately via localStorage and imagePreview state.
     };
 
-    setFormData(dataToStore); // Save main form data to Zustand store
+    localStorage.setItem('formData', JSON.stringify(dataToStore));
     router.push('/form/result');
   };
 
