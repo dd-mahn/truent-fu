@@ -193,6 +193,7 @@ export default function ResultClient() {
       width={120}
       height={120}
       className={`absolute object-contain z-20 ${className}`}
+      unoptimized={true}
     />
   );
 
