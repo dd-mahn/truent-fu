@@ -187,6 +187,7 @@ export default function ResultClient() {
     className?: string;
   }) => (
     <Image
+      key={src}
       src={src}
       alt={alt}
       width={120}
