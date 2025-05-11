@@ -17,6 +17,13 @@ body {
   background-image: url('../public/images/background.png');
 }
 
+.bg-crumpled-paper-sticker {
+  background-image: url('../public/images/background-sticker.png');
+  background-size: contain;
+  background-position-x: center;
+  background-repeat: no-repeat
+}
+
 .content-wrapper {
   @apply mx-auto w-full max-w-screen-sm;
 }

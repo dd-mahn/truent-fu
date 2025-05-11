@@ -190,32 +190,32 @@ export default function ResultClient() {
   // At this point, retrievedFormData is available, and an attempt to load displayImage has been made.
   // displayImage might be null if no image was stored, which is fine.
 
-  const Sticker = ({
-    src,
-    alt,
-    className,
-  }: {
-    src: string;
-    alt: string;
-    className?: string;
-  }) => (
-    <Image
-      key={src}
-      src={src}
-      alt={alt}
-      width={120}
-      height={120}
-      className={`absolute object-contain z-20 exclude-from-download ${
-        className || ""
-      }`}
-      unoptimized={true}
-    />
-  );
+  // const Sticker = ({
+  //   src,
+  //   alt,
+  //   className,
+  // }: {
+  //   src: string;
+  //   alt: string;
+  //   className?: string;
+  // }) => (
+  //   <Image
+  //     key={src}
+  //     src={src}
+  //     alt={alt}
+  //     width={120}
+  //     height={120}
+  //     className={`absolute object-contain z-20 exclude-from-download ${
+  //       className || ""
+  //     }`}
+  //     unoptimized={true}
+  //   />
+  // );
 
   return (
     <div className={`pt-24 md:pt-0 max-w-2xl mx-auto font-times relative bg-crumpled-paper`}>
       {/* Stickers */}
-      <Sticker
+      {/* <Sticker
         src="/images/guitar.png"
         alt="Guitar Sticker"
         className="top-18 md:-top-5  animate-shake -left-2 rotate-30 w-24 h-24 md:w-36 md:h-36"
@@ -244,10 +244,10 @@ export default function ResultClient() {
         src="/images/guitar-black.png"
         alt="Guitar Sticker 2"
         className="top-18 right-0 w-20  animate-shake h-20 md:w-24 md:h-24"
-      />
+      /> */}
       <div
         ref={resultRef}
-        className="bg-crumpled-paper p-4 md:p-6 pb-8 text-sm overflow-hidden font-times"
+        className="bg-crumpled-paper-sticker p-4 md:p-6 pb-8 text-sm overflow-hidden font-times"
       >
         {/* Header - Replicating FormClient structure & style */}
         <div className="text-center mb-4 relative z-10">
