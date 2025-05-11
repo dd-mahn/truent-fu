@@ -24,6 +24,13 @@ body {
   background-repeat: no-repeat
 }
 
+.bg-crumpled-paper-sticker-tablet {
+  background-image: url('../public/images/background-sticker-tablet.png');
+  background-size: contain;
+  background-position-x: center;
+  background-repeat: no-repeat
+}
+
 .content-wrapper {
   @apply mx-auto w-full max-w-screen-sm;
 }

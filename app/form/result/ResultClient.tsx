@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { toPng } from "html-to-image";
 import Image from "next/image";
+import { useMediaQuery } from "@/lib/useMediaQuery";
 
 // Define an interface for the formData expected from localStorage
 interface LocalStorageFormData {
@@ -51,6 +52,7 @@ export default function ResultClient() {
   const [isDownloading, setIsDownloading] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
   const [hasHydrated, setHasHydrated] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 400px)");
 
   useEffect(() => {
     // Attempt to read both main form data and image data from localStorage.
@@ -239,7 +241,11 @@ export default function ResultClient() {
       /> */}
       <div
         ref={resultRef}
-        className="bg-crumpled-paper-sticker p-4 md:p-6 pb-8 text-sm font-times"
+        className={` p-4 md:p-6 pb-8 text-sm font-times ${
+          !isMobile
+            ? "bg-crumpled-paper-sticker-tablet"
+            : "bg-crumpled-paper-sticker"
+        }`}
       >
         {/* Header - Replicating FormClient structure & style */}
         <div className="text-center mb-4 relative z-10">
@@ -324,7 +330,7 @@ export default function ResultClient() {
           >
             Lời phê của ban nhạc
           </h2>
-          <p className="scrollbar-hide text-[10px] md:text-sm italic whitespace-pre-wrap leading-relaxed text-justify text-brand-error font-nvn h-20 overflow-y-auto p-1 bg-transparent">
+          <p className="scrollbar-hide text-[10px] md:text-sm italic whitespace-pre-wrap leading-relaxed text-center text-brand-error font-nvn h-20 overflow-y-auto p-1 bg-transparent">
             {staticCriticismText}
           </p>
         </div>
