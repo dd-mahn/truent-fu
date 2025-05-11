@@ -241,7 +241,7 @@ export default function ResultClient() {
       /> */}
       <div
         ref={resultRef}
-        className={` p-4 md:p-6 pb-8 text-sm font-times ${
+        className={` p-4 md:p-6 mx-4 pb-8 text-sm font-times ${
           !isMobile
             ? "bg-crumpled-paper-sticker-tablet"
             : "bg-crumpled-paper-sticker"
