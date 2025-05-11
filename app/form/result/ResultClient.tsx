@@ -98,15 +98,6 @@ export default function ResultClient() {
       const maxAttempts = isSafari ? 5 : 1;
       let lastDataUrlLength = 0;
 
-      // Define the filter function to exclude stickers
-      const filter = (node: HTMLElement) => {
-        // Check if the node is an element and has the class
-        if (node.classList && typeof node.classList.contains === "function") {
-          return !node.classList.contains("exclude-from-download");
-        }
-        return true; // Keep other nodes
-      };
-
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
         if (attempt > 0) {
           await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
@@ -114,12 +105,11 @@ export default function ResultClient() {
 
         const currentDataUrl = await toPng(element, {
           cacheBust: true,
-          pixelRatio: 2,
-          skipAutoScale: true,
+          fetchRequestInit: { cache: "no-cache" },
           width: element.offsetWidth,
           height: element.offsetHeight,
-          fetchRequestInit: { cache: "no-cache" },
-          filter: filter, // Add the filter here
+          skipAutoScale: true,
+          pixelRatio: 2,
         });
 
         dataUrl = currentDataUrl;
@@ -213,7 +203,9 @@ export default function ResultClient() {
   // );
 
   return (
-    <div className={`pt-24 md:pt-0 max-w-2xl mx-auto font-times relative bg-crumpled-paper`}>
+    <div
+      className={`pt-24 md:pt-0 max-w-2xl mx-auto font-times bg-crumpled-paper`}
+    >
       {/* Stickers */}
       {/* <Sticker
         src="/images/guitar.png"
@@ -247,7 +239,7 @@ export default function ResultClient() {
       /> */}
       <div
         ref={resultRef}
-        className="bg-crumpled-paper-sticker p-4 md:p-6 pb-8 text-sm overflow-hidden font-times"
+        className="bg-crumpled-paper-sticker p-4 md:p-6 pb-8 text-sm font-times"
       >
         {/* Header - Replicating FormClient structure & style */}
         <div className="text-center mb-4 relative z-10">
